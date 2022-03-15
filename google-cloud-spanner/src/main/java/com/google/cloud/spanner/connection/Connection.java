@@ -23,9 +23,11 @@ import com.google.cloud.spanner.AbortedDueToConcurrentModificationException;
 import com.google.cloud.spanner.AbortedException;
 import com.google.cloud.spanner.AsyncResultSet;
 import com.google.cloud.spanner.CommitResponse;
+import com.google.cloud.spanner.Dialect;
 import com.google.cloud.spanner.ErrorCode;
 import com.google.cloud.spanner.Mutation;
 import com.google.cloud.spanner.Options.QueryOption;
+import com.google.cloud.spanner.Options.RpcPriority;
 import com.google.cloud.spanner.ReadContext.QueryAnalyzeMode;
 import com.google.cloud.spanner.ResultSet;
 import com.google.cloud.spanner.SpannerBatchUpdateException;
@@ -531,6 +533,32 @@ public interface Connection extends AutoCloseable {
 
   /** @return true if this connection requests commit statistics from Cloud Spanner */
   boolean isReturnCommitStats();
+
+  /**
+   * Sets the priority to use for RPCs executed by this connection..
+   *
+   * @param rpcPriority The RPC priority to use.
+   *     <ul>
+   *       <li>{@link RpcPriority#HIGH} This specifies that the RPC's invocation will be of high
+   *           priority.
+   *       <li>{@link RpcPriority#MEDIUM} This specifies that the RPC's invocation will be of medium
+   *           priority.
+   *       <li>{@link RpcPriority#LOW} This specifies that the RPC's invocation will be of low
+   *           priority.
+   *     </ul>
+   */
+  default void setRPCPriority(RpcPriority rpcPriority) {
+    throw new UnsupportedOperationException("Unimplemented");
+  }
+
+  /**
+   * Gets the current RPC priority of this connection.
+   *
+   * @return The RPC priority that is currently used by this connection.
+   */
+  default RpcPriority getRPCPriority() {
+    throw new UnsupportedOperationException("Unimplemented");
+  }
 
   /**
    * Commits the current transaction of this connection. All mutations that have been buffered
@@ -1070,6 +1098,11 @@ public interface Connection extends AutoCloseable {
    * @throws SpannerException if the {@link Connection} is in autocommit mode
    */
   void bufferedWrite(Iterable<Mutation> mutations);
+
+  /** The {@link Dialect} that is used by this {@link Connection}. */
+  default Dialect getDialect() {
+    throw new UnsupportedOperationException("Not implemented");
+  }
 
   /**
    * This query option is used internally to indicate that a query is executed by the library itself

@@ -17,6 +17,7 @@
 package com.google.cloud.spanner.connection;
 
 import com.google.api.core.InternalApi;
+import com.google.api.gax.rpc.TransportChannelProvider;
 import com.google.auth.Credentials;
 import com.google.auth.oauth2.AccessToken;
 import com.google.auth.oauth2.GoogleCredentials;
@@ -25,6 +26,7 @@ import com.google.cloud.NoCredentials;
 import com.google.cloud.ServiceOptions;
 import com.google.cloud.spanner.DatabaseId;
 import com.google.cloud.spanner.ErrorCode;
+import com.google.cloud.spanner.Options.RpcPriority;
 import com.google.cloud.spanner.SessionPoolOptions;
 import com.google.cloud.spanner.Spanner;
 import com.google.cloud.spanner.SpannerException;
@@ -34,6 +36,7 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Sets;
 import com.google.spanner.v1.ExecuteSqlRequest.QueryOptions;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -155,9 +158,11 @@ public class ConnectionOptions {
   private static final String DEFAULT_MIN_SESSIONS = null;
   private static final String DEFAULT_MAX_SESSIONS = null;
   private static final String DEFAULT_NUM_CHANNELS = null;
+  private static final String DEFAULT_CHANNEL_PROVIDER = null;
   private static final String DEFAULT_USER_AGENT = null;
   private static final String DEFAULT_OPTIMIZER_VERSION = "";
   private static final String DEFAULT_OPTIMIZER_STATISTICS_PACKAGE = "";
+  private static final RpcPriority DEFAULT_RPC_PRIORITY = null;
   private static final boolean DEFAULT_RETURN_COMMIT_STATS = false;
   private static final boolean DEFAULT_LENIENT = false;
 
@@ -187,6 +192,8 @@ public class ConnectionOptions {
   public static final String MAX_SESSIONS_PROPERTY_NAME = "maxSessions";
   /** Name of the 'numChannels' connection property. */
   public static final String NUM_CHANNELS_PROPERTY_NAME = "numChannels";
+  /** Name of the 'channelProvider' connection property. */
+  public static final String CHANNEL_PROVIDER_PROPERTY_NAME = "channelProvider";
   /** Custom user agent string is only for other Google libraries. */
   private static final String USER_AGENT_PROPERTY_NAME = "userAgent";
   /** Query optimizer version to use for a connection. */
@@ -196,6 +203,10 @@ public class ConnectionOptions {
       "optimizerStatisticsPackage";
   /** Name of the 'lenientMode' connection property. */
   public static final String LENIENT_PROPERTY_NAME = "lenient";
+  /** Name of the 'rpcPriority' connection property. */
+  public static final String RPC_PRIORITY_NAME = "rpcPriority";
+  /** Dialect to use for a connection. */
+  private static final String DIALECT_PROPERTY_NAME = "dialect";
 
   /** All valid connection properties. */
   public static final Set<ConnectionProperty> VALID_PROPERTIES =
@@ -232,6 +243,9 @@ public class ConnectionOptions {
                   ConnectionProperty.createStringProperty(
                       NUM_CHANNELS_PROPERTY_NAME,
                       "The number of gRPC channels to use to communicate with Cloud Spanner. The default is 4."),
+                  ConnectionProperty.createStringProperty(
+                      CHANNEL_PROVIDER_PROPERTY_NAME,
+                      "The name of the channel provider class. The name must reference an implementation of ExternalChannelProvider. If this property is not set, the connection will use the default grpc channel provider."),
                   ConnectionProperty.createBooleanProperty(
                       USE_PLAIN_TEXT_PROPERTY_NAME,
                       "Use a plain text communication channel (i.e. non-TLS) for communicating with the server (true/false). Set this value to true for communication with the Cloud Spanner emulator.",
@@ -252,7 +266,12 @@ public class ConnectionOptions {
                   ConnectionProperty.createBooleanProperty(
                       LENIENT_PROPERTY_NAME,
                       "Silently ignore unknown properties in the connection string/properties (true/false)",
-                      DEFAULT_LENIENT))));
+                      DEFAULT_LENIENT),
+                  ConnectionProperty.createStringProperty(
+                      RPC_PRIORITY_NAME,
+                      "Sets the priority for all RPC invocations from this connection (HIGH/MEDIUM/LOW). The default is HIGH."),
+                  ConnectionProperty.createStringProperty(
+                      DIALECT_PROPERTY_NAME, "Sets the dialect to use for this connection."))));
 
   private static final Set<ConnectionProperty> INTERNAL_PROPERTIES =
       Collections.unmodifiableSet(
@@ -302,6 +321,15 @@ public class ConnectionOptions {
   @VisibleForTesting
   interface SpannerOptionsConfigurator {
     void configure(SpannerOptions.Builder options);
+  }
+
+  /**
+   * {@link ExternalChannelProvider} can be used for to specify an external channel provider. This
+   * is needed if you require different certificates than those provided by the standard grpc
+   * channel provider.
+   */
+  public interface ExternalChannelProvider {
+    TransportChannelProvider getChannelProvider(String host, int port);
   }
 
   /** Builder for {@link ConnectionOptions} instances. */
@@ -483,12 +511,14 @@ public class ConnectionOptions {
   private final Credentials credentials;
   private final SessionPoolOptions sessionPoolOptions;
   private final Integer numChannels;
+  private final String channelProvider;
   private final Integer minSessions;
   private final Integer maxSessions;
   private final String userAgent;
   private final QueryOptions queryOptions;
   private final boolean returnCommitStats;
   private final boolean autoConfigEmulator;
+  private final RpcPriority rpcPriority;
 
   private final boolean autocommit;
   private final boolean readOnly;
@@ -532,6 +562,7 @@ public class ConnectionOptions {
     this.autoConfigEmulator = parseAutoConfigEmulator(this.uri);
     this.usePlainText = this.autoConfigEmulator || parseUsePlainText(this.uri);
     this.host = determineHost(matcher, autoConfigEmulator, usePlainText);
+    this.rpcPriority = parseRPCPriority(this.uri);
 
     this.instanceId = matcher.group(Builder.INSTANCE_GROUP);
     this.databaseName = matcher.group(Builder.DATABASE_GROUP);
@@ -559,6 +590,7 @@ public class ConnectionOptions {
         parseIntegerProperty(MAX_SESSIONS_PROPERTY_NAME, parseMaxSessions(builder.uri));
     this.numChannels =
         parseIntegerProperty(NUM_CHANNELS_PROPERTY_NAME, parseNumChannels(builder.uri));
+    this.channelProvider = parseChannelProvider(builder.uri);
 
     String projectId = matcher.group(Builder.PROJECT_GROUP);
     if (Builder.DEFAULT_PROJECT_ID_PLACEHOLDER.equalsIgnoreCase(projectId)) {
@@ -578,6 +610,7 @@ public class ConnectionOptions {
           builder.sessionPoolOptions == null
               ? SessionPoolOptions.newBuilder()
               : builder.sessionPoolOptions.toBuilder();
+      sessionPoolOptionsBuilder.setAutoDetectDialect(true);
       if (this.minSessions != null) {
         sessionPoolOptionsBuilder.setMinSessions(this.minSessions);
       }
@@ -585,8 +618,10 @@ public class ConnectionOptions {
         sessionPoolOptionsBuilder.setMaxSessions(this.maxSessions);
       }
       this.sessionPoolOptions = sessionPoolOptionsBuilder.build();
-    } else {
+    } else if (builder.sessionPoolOptions != null) {
       this.sessionPoolOptions = builder.sessionPoolOptions;
+    } else {
+      this.sessionPoolOptions = SessionPoolOptions.newBuilder().setAutoDetectDialect(true).build();
     }
   }
 
@@ -690,6 +725,12 @@ public class ConnectionOptions {
   }
 
   @VisibleForTesting
+  static String parseChannelProvider(String uri) {
+    String value = parseUriProperty(uri, CHANNEL_PROVIDER_PROPERTY_NAME);
+    return value != null ? value : DEFAULT_CHANNEL_PROVIDER;
+  }
+
+  @VisibleForTesting
   static String parseUserAgent(String uri) {
     String value = parseUriProperty(uri, USER_AGENT_PROPERTY_NAME);
     return value != null ? value : DEFAULT_USER_AGENT;
@@ -722,6 +763,12 @@ public class ConnectionOptions {
   static boolean parseLenient(String uri) {
     String value = parseUriProperty(uri, LENIENT_PROPERTY_NAME);
     return value != null ? Boolean.parseBoolean(value) : DEFAULT_LENIENT;
+  }
+
+  @VisibleForTesting
+  static RpcPriority parseRPCPriority(String uri) {
+    String value = parseUriProperty(uri, RPC_PRIORITY_NAME);
+    return value != null ? RpcPriority.valueOf(value) : DEFAULT_RPC_PRIORITY;
   }
 
   @VisibleForTesting
@@ -829,6 +876,25 @@ public class ConnectionOptions {
     return numChannels;
   }
 
+  /** Calls the getChannelProvider() method from the supplied class. */
+  public TransportChannelProvider getChannelProvider() {
+    if (channelProvider == null) {
+      return null;
+    }
+    try {
+      URL url = new URL(host);
+      ExternalChannelProvider provider =
+          ExternalChannelProvider.class.cast(Class.forName(channelProvider).newInstance());
+      return provider.getChannelProvider(url.getHost(), url.getPort());
+    } catch (Exception e) {
+      throw SpannerExceptionFactory.newSpannerException(
+          ErrorCode.INVALID_ARGUMENT,
+          String.format(
+              "%s : Failed to create channel with external provider: %s",
+              e.toString(), channelProvider));
+    }
+  }
+
   /** The host and port number that this {@link ConnectionOptions} will connect to */
   public String getHost() {
     return host;
@@ -920,6 +986,11 @@ public class ConnectionOptions {
    */
   public boolean isAutoConfigEmulator() {
     return autoConfigEmulator;
+  }
+
+  /** The {@link RpcPriority} to use for the connection. */
+  RpcPriority getRPCPriority() {
+    return rpcPriority;
   }
 
   /** Interceptors that should be executed after each statement */

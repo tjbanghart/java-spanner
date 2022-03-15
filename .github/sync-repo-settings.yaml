@@ -19,21 +19,7 @@ branchProtectionRules:
       - checkstyle
       - compile (8)
       - compile (11)
-  - pattern: 3.1.x
-    isAdminEnforced: true
-    requiredApprovingReviewCount: 1
-    requiresCodeOwnerReviews: true
-    requiresStrictStatusChecks: false
-    requiredStatusCheckContexts:
-      - dependencies (8)
-      - dependencies (11)
-      - lint
-      - units (7)
-      - units (8)
-      - units (11)
-      - 'Kokoro - Test: Integration'
-      - cla/google
-      - checkstyle
+      - OwlBot Post Processor
   - pattern: 3.3.x
     isAdminEnforced: true
     requiredApprovingReviewCount: 1

@@ -16,6 +16,7 @@
 
 package com.google.cloud.spanner.connection;
 
+import static com.google.cloud.spanner.connection.DialectNamespaceMapper.getNamespace;
 import static com.google.cloud.spanner.connection.StatementResult.ClientSideStatementType.ABORT_BATCH;
 import static com.google.cloud.spanner.connection.StatementResult.ClientSideStatementType.BEGIN;
 import static com.google.cloud.spanner.connection.StatementResult.ClientSideStatementType.COMMIT;
@@ -29,6 +30,7 @@ import static com.google.cloud.spanner.connection.StatementResult.ClientSideStat
 import static com.google.cloud.spanner.connection.StatementResult.ClientSideStatementType.SET_READ_ONLY_STALENESS;
 import static com.google.cloud.spanner.connection.StatementResult.ClientSideStatementType.SET_RETRY_ABORTS_INTERNALLY;
 import static com.google.cloud.spanner.connection.StatementResult.ClientSideStatementType.SET_RETURN_COMMIT_STATS;
+import static com.google.cloud.spanner.connection.StatementResult.ClientSideStatementType.SET_RPC_PRIORITY;
 import static com.google.cloud.spanner.connection.StatementResult.ClientSideStatementType.SET_STATEMENT_TAG;
 import static com.google.cloud.spanner.connection.StatementResult.ClientSideStatementType.SET_STATEMENT_TIMEOUT;
 import static com.google.cloud.spanner.connection.StatementResult.ClientSideStatementType.SET_TRANSACTION_MODE;
@@ -44,6 +46,7 @@ import static com.google.cloud.spanner.connection.StatementResult.ClientSideStat
 import static com.google.cloud.spanner.connection.StatementResult.ClientSideStatementType.SHOW_READ_TIMESTAMP;
 import static com.google.cloud.spanner.connection.StatementResult.ClientSideStatementType.SHOW_RETRY_ABORTS_INTERNALLY;
 import static com.google.cloud.spanner.connection.StatementResult.ClientSideStatementType.SHOW_RETURN_COMMIT_STATS;
+import static com.google.cloud.spanner.connection.StatementResult.ClientSideStatementType.SHOW_RPC_PRIORITY;
 import static com.google.cloud.spanner.connection.StatementResult.ClientSideStatementType.SHOW_STATEMENT_TAG;
 import static com.google.cloud.spanner.connection.StatementResult.ClientSideStatementType.SHOW_STATEMENT_TIMEOUT;
 import static com.google.cloud.spanner.connection.StatementResult.ClientSideStatementType.SHOW_TRANSACTION_TAG;
@@ -54,6 +57,8 @@ import static com.google.cloud.spanner.connection.StatementResultImpl.resultSet;
 
 import com.google.cloud.spanner.CommitResponse;
 import com.google.cloud.spanner.CommitStats;
+import com.google.cloud.spanner.Dialect;
+import com.google.cloud.spanner.Options.RpcPriority;
 import com.google.cloud.spanner.ResultSet;
 import com.google.cloud.spanner.ResultSets;
 import com.google.cloud.spanner.Struct;
@@ -63,9 +68,14 @@ import com.google.cloud.spanner.Type.StructField;
 import com.google.cloud.spanner.connection.ReadOnlyStalenessUtil.DurationValueGetter;
 import com.google.common.base.MoreObjects;
 import com.google.common.base.Preconditions;
+import com.google.common.collect.ImmutableMap;
 import com.google.protobuf.Duration;
-import java.util.Arrays;
+import com.google.spanner.v1.RequestOptions;
+import com.google.spanner.v1.RequestOptions.Priority;
+import java.util.Collections;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
+import javax.annotation.Nullable;
 
 /**
  * The methods in this class are called by the different {@link ClientSideStatement}s. These method
@@ -88,6 +98,16 @@ class ConnectionStatementExecutorImpl implements ConnectionStatementExecutor {
     public boolean hasDuration() {
       return connection.hasStatementTimeout();
     }
+  }
+
+  private static final Map<Priority, RpcPriority> validRPCPriorityValues;
+
+  static {
+    ImmutableMap.Builder<Priority, RpcPriority> builder = ImmutableMap.builder();
+    builder.put(Priority.PRIORITY_HIGH, RpcPriority.HIGH);
+    builder.put(Priority.PRIORITY_MEDIUM, RpcPriority.MEDIUM);
+    builder.put(Priority.PRIORITY_LOW, RpcPriority.LOW);
+    validRPCPriorityValues = builder.build();
   }
 
   /** The connection to execute the statements on. */
@@ -122,7 +142,10 @@ class ConnectionStatementExecutorImpl implements ConnectionStatementExecutor {
 
   @Override
   public StatementResult statementShowReadOnly() {
-    return StatementResultImpl.resultSet("READONLY", getConnection().isReadOnly(), SHOW_READONLY);
+    return StatementResultImpl.resultSet(
+        String.format("%sREADONLY", getNamespace(connection.getDialect())),
+        getConnection().isReadOnly(),
+        SHOW_READONLY);
   }
 
   @Override
@@ -135,7 +158,7 @@ class ConnectionStatementExecutorImpl implements ConnectionStatementExecutor {
   @Override
   public StatementResult statementShowRetryAbortsInternally() {
     return StatementResultImpl.resultSet(
-        "RETRY_ABORTS_INTERNALLY",
+        String.format("%sRETRY_ABORTS_INTERNALLY", getNamespace(connection.getDialect())),
         getConnection().isRetryAbortsInternally(),
         SHOW_RETRY_ABORTS_INTERNALLY);
   }
@@ -149,7 +172,9 @@ class ConnectionStatementExecutorImpl implements ConnectionStatementExecutor {
   @Override
   public StatementResult statementShowAutocommitDmlMode() {
     return resultSet(
-        "AUTOCOMMIT_DML_MODE", getConnection().getAutocommitDmlMode(), SHOW_AUTOCOMMIT_DML_MODE);
+        String.format("%sAUTOCOMMIT_DML_MODE", getNamespace(connection.getDialect())),
+        getConnection().getAutocommitDmlMode(),
+        SHOW_AUTOCOMMIT_DML_MODE);
   }
 
   @Override
@@ -172,20 +197,24 @@ class ConnectionStatementExecutorImpl implements ConnectionStatementExecutor {
         "STATEMENT_TIMEOUT",
         getConnection().hasStatementTimeout()
             ? ReadOnlyStalenessUtil.durationToString(new StatementTimeoutGetter(getConnection()))
-            : null,
+            : connection.getDialect() == Dialect.POSTGRESQL ? "0" : null,
         SHOW_STATEMENT_TIMEOUT);
   }
 
   @Override
   public StatementResult statementShowReadTimestamp() {
     return resultSet(
-        "READ_TIMESTAMP", getConnection().getReadTimestampOrNull(), SHOW_READ_TIMESTAMP);
+        String.format("%sREAD_TIMESTAMP", getNamespace(connection.getDialect())),
+        getConnection().getReadTimestampOrNull(),
+        SHOW_READ_TIMESTAMP);
   }
 
   @Override
   public StatementResult statementShowCommitTimestamp() {
     return resultSet(
-        "COMMIT_TIMESTAMP", getConnection().getCommitTimestampOrNull(), SHOW_COMMIT_TIMESTAMP);
+        String.format("%sCOMMIT_TIMESTAMP", getNamespace(connection.getDialect())),
+        getConnection().getCommitTimestampOrNull(),
+        SHOW_COMMIT_TIMESTAMP);
   }
 
   @Override
@@ -198,13 +227,17 @@ class ConnectionStatementExecutorImpl implements ConnectionStatementExecutor {
     ResultSet resultSet =
         ResultSets.forRows(
             Type.struct(
-                StructField.of("COMMIT_TIMESTAMP", Type.timestamp()),
-                StructField.of("MUTATION_COUNT", Type.int64())),
-            Arrays.asList(
+                StructField.of(
+                    String.format("%sCOMMIT_TIMESTAMP", getNamespace(connection.getDialect())),
+                    Type.timestamp()),
+                StructField.of(
+                    String.format("%sMUTATION_COUNT", getNamespace(connection.getDialect())),
+                    Type.int64())),
+            Collections.singletonList(
                 Struct.newBuilder()
-                    .set("COMMIT_TIMESTAMP")
+                    .set(String.format("%sCOMMIT_TIMESTAMP", getNamespace(connection.getDialect())))
                     .to(response == null ? null : response.getCommitTimestamp())
-                    .set("MUTATION_COUNT")
+                    .set(String.format("%sMUTATION_COUNT", getNamespace(connection.getDialect())))
                     .to(stats == null ? null : stats.getMutationCount())
                     .build()));
     return StatementResultImpl.of(resultSet, SHOW_COMMIT_RESPONSE);
@@ -220,7 +253,7 @@ class ConnectionStatementExecutorImpl implements ConnectionStatementExecutor {
   public StatementResult statementShowReadOnlyStaleness() {
     TimestampBound staleness = getConnection().getReadOnlyStaleness();
     return resultSet(
-        "READ_ONLY_STALENESS",
+        String.format("%sREAD_ONLY_STALENESS", getNamespace(connection.getDialect())),
         ReadOnlyStalenessUtil.timestampBoundToString(staleness),
         SHOW_READ_ONLY_STALENESS);
   }
@@ -234,7 +267,9 @@ class ConnectionStatementExecutorImpl implements ConnectionStatementExecutor {
   @Override
   public StatementResult statementShowOptimizerVersion() {
     return resultSet(
-        "OPTIMIZER_VERSION", getConnection().getOptimizerVersion(), SHOW_OPTIMIZER_VERSION);
+        String.format("%sOPTIMIZER_VERSION", getNamespace(connection.getDialect())),
+        getConnection().getOptimizerVersion(),
+        SHOW_OPTIMIZER_VERSION);
   }
 
   @Override
@@ -246,7 +281,7 @@ class ConnectionStatementExecutorImpl implements ConnectionStatementExecutor {
   @Override
   public StatementResult statementShowOptimizerStatisticsPackage() {
     return resultSet(
-        "OPTIMIZER_STATISTICS_PACKAGE",
+        String.format("%sOPTIMIZER_STATISTICS_PACKAGE", getNamespace(connection.getDialect())),
         getConnection().getOptimizerStatisticsPackage(),
         SHOW_OPTIMIZER_STATISTICS_PACKAGE);
   }
@@ -260,7 +295,9 @@ class ConnectionStatementExecutorImpl implements ConnectionStatementExecutor {
   @Override
   public StatementResult statementShowReturnCommitStats() {
     return resultSet(
-        "RETURN_COMMIT_STATS", getConnection().isReturnCommitStats(), SHOW_RETURN_COMMIT_STATS);
+        String.format("%sRETURN_COMMIT_STATS", getNamespace(connection.getDialect())),
+        getConnection().isReturnCommitStats(),
+        SHOW_RETURN_COMMIT_STATS);
   }
 
   @Override
@@ -272,7 +309,7 @@ class ConnectionStatementExecutorImpl implements ConnectionStatementExecutor {
   @Override
   public StatementResult statementShowStatementTag() {
     return resultSet(
-        "STATEMENT_TAG",
+        String.format("%sSTATEMENT_TAG", getNamespace(connection.getDialect())),
         MoreObjects.firstNonNull(getConnection().getStatementTag(), ""),
         SHOW_STATEMENT_TAG);
   }
@@ -286,7 +323,7 @@ class ConnectionStatementExecutorImpl implements ConnectionStatementExecutor {
   @Override
   public StatementResult statementShowTransactionTag() {
     return resultSet(
-        "TRANSACTION_TAG",
+        String.format("%sTRANSACTION_TAG", getNamespace(connection.getDialect())),
         MoreObjects.firstNonNull(getConnection().getTransactionTag(), ""),
         SHOW_TRANSACTION_TAG);
   }
@@ -294,6 +331,15 @@ class ConnectionStatementExecutorImpl implements ConnectionStatementExecutor {
   @Override
   public StatementResult statementBeginTransaction() {
     getConnection().beginTransaction();
+    return noResult(BEGIN);
+  }
+
+  @Override
+  public StatementResult statementBeginPgTransaction(@Nullable PgTransactionMode transactionMode) {
+    getConnection().beginTransaction();
+    if (transactionMode != null) {
+      statementSetPgTransactionMode(transactionMode);
+    }
     return noResult(BEGIN);
   }
 
@@ -312,6 +358,41 @@ class ConnectionStatementExecutorImpl implements ConnectionStatementExecutor {
   @Override
   public StatementResult statementSetTransactionMode(TransactionMode mode) {
     getConnection().setTransactionMode(mode);
+    return noResult(SET_TRANSACTION_MODE);
+  }
+
+  @Override
+  public StatementResult statementSetPgTransactionMode(PgTransactionMode transactionMode) {
+    switch (transactionMode) {
+      case READ_ONLY_TRANSACTION:
+        getConnection().setTransactionMode(TransactionMode.READ_ONLY_TRANSACTION);
+        break;
+      case READ_WRITE_TRANSACTION:
+        getConnection().setTransactionMode(TransactionMode.READ_WRITE_TRANSACTION);
+        break;
+      case ISOLATION_LEVEL_DEFAULT:
+      case ISOLATION_LEVEL_SERIALIZABLE:
+      default:
+        // no-op
+    }
+    return noResult(SET_TRANSACTION_MODE);
+  }
+
+  @Override
+  public StatementResult statementSetPgSessionCharacteristicsTransactionMode(
+      PgTransactionMode transactionMode) {
+    switch (transactionMode) {
+      case READ_ONLY_TRANSACTION:
+        getConnection().setReadOnly(true);
+        break;
+      case READ_WRITE_TRANSACTION:
+        getConnection().setReadOnly(false);
+        break;
+      case ISOLATION_LEVEL_DEFAULT:
+      case ISOLATION_LEVEL_SERIALIZABLE:
+      default:
+        // no-op
+    }
     return noResult(SET_TRANSACTION_MODE);
   }
 
@@ -337,5 +418,22 @@ class ConnectionStatementExecutorImpl implements ConnectionStatementExecutor {
   public StatementResult statementAbortBatch() {
     getConnection().abortBatch();
     return noResult(ABORT_BATCH);
+  }
+
+  @Override
+  public StatementResult statementSetRPCPriority(Priority priority) {
+    RpcPriority value = validRPCPriorityValues.get(priority);
+    getConnection().setRPCPriority(value);
+    return noResult(SET_RPC_PRIORITY);
+  }
+
+  @Override
+  public StatementResult statementShowRPCPriority() {
+    return resultSet(
+        String.format("%sRPC_PRIORITY", getNamespace(connection.getDialect())),
+        getConnection().getRPCPriority() == null
+            ? RequestOptions.Priority.PRIORITY_UNSPECIFIED
+            : getConnection().getRPCPriority(),
+        SHOW_RPC_PRIORITY);
   }
 }

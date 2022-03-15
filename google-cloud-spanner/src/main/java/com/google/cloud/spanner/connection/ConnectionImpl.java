@@ -24,10 +24,12 @@ import com.google.cloud.Timestamp;
 import com.google.cloud.spanner.AsyncResultSet;
 import com.google.cloud.spanner.CommitResponse;
 import com.google.cloud.spanner.DatabaseClient;
+import com.google.cloud.spanner.Dialect;
 import com.google.cloud.spanner.ErrorCode;
 import com.google.cloud.spanner.Mutation;
 import com.google.cloud.spanner.Options;
 import com.google.cloud.spanner.Options.QueryOption;
+import com.google.cloud.spanner.Options.RpcPriority;
 import com.google.cloud.spanner.Options.UpdateOption;
 import com.google.cloud.spanner.ReadContext.QueryAnalyzeMode;
 import com.google.cloud.spanner.ResultSet;
@@ -38,9 +40,9 @@ import com.google.cloud.spanner.SpannerExceptionFactory;
 import com.google.cloud.spanner.Statement;
 import com.google.cloud.spanner.TimestampBound;
 import com.google.cloud.spanner.TimestampBound.Mode;
+import com.google.cloud.spanner.connection.AbstractStatementParser.ParsedStatement;
+import com.google.cloud.spanner.connection.AbstractStatementParser.StatementType;
 import com.google.cloud.spanner.connection.StatementExecutor.StatementTimeout;
-import com.google.cloud.spanner.connection.StatementParser.ParsedStatement;
-import com.google.cloud.spanner.connection.StatementParser.StatementType;
 import com.google.cloud.spanner.connection.UnitOfWork.UnitOfWorkState;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
@@ -81,7 +83,7 @@ class ConnectionImpl implements Connection {
 
   private volatile LeakedConnectionException leakedException = new LeakedConnectionException();
   private final SpannerPool spannerPool;
-  private final StatementParser parser = StatementParser.INSTANCE;
+  private AbstractStatementParser statementParser;
   /**
    * The {@link ConnectionStatementExecutor} is responsible for translating parsed {@link
    * ClientSideStatement}s into actual method calls on this {@link ConnectionImpl}. I.e. the {@link
@@ -208,6 +210,7 @@ class ConnectionImpl implements Connection {
   private AutocommitDmlMode autocommitDmlMode = AutocommitDmlMode.TRANSACTIONAL;
   private TimestampBound readOnlyStaleness = TimestampBound.strong();
   private QueryOptions queryOptions = QueryOptions.getDefaultInstance();
+  private RpcPriority rpcPriority = null;
 
   private String transactionTag;
   private String statementTag;
@@ -227,6 +230,7 @@ class ConnectionImpl implements Connection {
     this.readOnly = options.isReadOnly();
     this.autocommit = options.isAutocommit();
     this.queryOptions = this.queryOptions.toBuilder().mergeFrom(options.getQueryOptions()).build();
+    this.rpcPriority = options.getRPCPriority();
     this.returnCommitStats = options.isReturnCommitStats();
     this.ddlClient = createDdlClient();
     setDefaultTransactionOptions();
@@ -261,6 +265,13 @@ class ConnectionImpl implements Connection {
         .setInstanceId(options.getInstanceId())
         .setDatabaseName(options.getDatabaseName())
         .build();
+  }
+
+  private AbstractStatementParser getStatementParser() {
+    if (this.statementParser == null) {
+      this.statementParser = AbstractStatementParser.getInstance(dbClient.getDialect());
+    }
+    return this.statementParser;
   }
 
   @Override
@@ -314,6 +325,11 @@ class ConnectionImpl implements Connection {
   /** Get the call stack from when the {@link Connection} was opened. */
   LeakedConnectionException getLeakedException() {
     return leakedException;
+  }
+
+  @Override
+  public Dialect getDialect() {
+    return dbClient.getDialect();
   }
 
   @Override
@@ -451,6 +467,18 @@ class ConnectionImpl implements Connection {
   public String getOptimizerStatisticsPackage() {
     ConnectionPreconditions.checkState(!isClosed(), CLOSED_ERROR_MSG);
     return this.queryOptions.getOptimizerStatisticsPackage();
+  }
+
+  @Override
+  public void setRPCPriority(RpcPriority rpcPriority) {
+    ConnectionPreconditions.checkState(!isClosed(), CLOSED_ERROR_MSG);
+    this.rpcPriority = rpcPriority;
+  }
+
+  @Override
+  public RpcPriority getRPCPriority() {
+    ConnectionPreconditions.checkState(!isClosed(), CLOSED_ERROR_MSG);
+    return this.rpcPriority;
   }
 
   @Override
@@ -789,7 +817,7 @@ class ConnectionImpl implements Connection {
   public StatementResult execute(Statement statement) {
     Preconditions.checkNotNull(statement);
     ConnectionPreconditions.checkState(!isClosed(), CLOSED_ERROR_MSG);
-    ParsedStatement parsedStatement = parser.parse(statement, this.queryOptions);
+    ParsedStatement parsedStatement = getStatementParser().parse(statement, this.queryOptions);
     switch (parsedStatement.getType()) {
       case CLIENT_SIDE:
         return parsedStatement
@@ -814,7 +842,7 @@ class ConnectionImpl implements Connection {
   public AsyncStatementResult executeAsync(Statement statement) {
     Preconditions.checkNotNull(statement);
     ConnectionPreconditions.checkState(!isClosed(), CLOSED_ERROR_MSG);
-    ParsedStatement parsedStatement = parser.parse(statement, this.queryOptions);
+    ParsedStatement parsedStatement = getStatementParser().parse(statement, this.queryOptions);
     switch (parsedStatement.getType()) {
       case CLIENT_SIDE:
         return AsyncStatementResultImpl.of(
@@ -862,7 +890,7 @@ class ConnectionImpl implements Connection {
     Preconditions.checkNotNull(query);
     Preconditions.checkNotNull(analyzeMode);
     ConnectionPreconditions.checkState(!isClosed(), CLOSED_ERROR_MSG);
-    ParsedStatement parsedStatement = parser.parse(query, this.queryOptions);
+    ParsedStatement parsedStatement = getStatementParser().parse(query, this.queryOptions);
     if (parsedStatement.isQuery()) {
       switch (parsedStatement.getType()) {
         case CLIENT_SIDE:
@@ -887,7 +915,7 @@ class ConnectionImpl implements Connection {
       Statement query, AnalyzeMode analyzeMode, QueryOption... options) {
     Preconditions.checkNotNull(query);
     ConnectionPreconditions.checkState(!isClosed(), CLOSED_ERROR_MSG);
-    ParsedStatement parsedStatement = parser.parse(query, this.queryOptions);
+    ParsedStatement parsedStatement = getStatementParser().parse(query, this.queryOptions);
     if (parsedStatement.isQuery()) {
       switch (parsedStatement.getType()) {
         case CLIENT_SIDE:
@@ -915,7 +943,7 @@ class ConnectionImpl implements Connection {
   public long executeUpdate(Statement update) {
     Preconditions.checkNotNull(update);
     ConnectionPreconditions.checkState(!isClosed(), CLOSED_ERROR_MSG);
-    ParsedStatement parsedStatement = parser.parse(update);
+    ParsedStatement parsedStatement = getStatementParser().parse(update);
     if (parsedStatement.isUpdate()) {
       switch (parsedStatement.getType()) {
         case UPDATE:
@@ -935,7 +963,7 @@ class ConnectionImpl implements Connection {
   public ApiFuture<Long> executeUpdateAsync(Statement update) {
     Preconditions.checkNotNull(update);
     ConnectionPreconditions.checkState(!isClosed(), CLOSED_ERROR_MSG);
-    ParsedStatement parsedStatement = parser.parse(update);
+    ParsedStatement parsedStatement = getStatementParser().parse(update);
     if (parsedStatement.isUpdate()) {
       switch (parsedStatement.getType()) {
         case UPDATE:
@@ -959,7 +987,7 @@ class ConnectionImpl implements Connection {
     // Check that there are only DML statements in the input.
     List<ParsedStatement> parsedStatements = new LinkedList<>();
     for (Statement update : updates) {
-      ParsedStatement parsedStatement = parser.parse(update);
+      ParsedStatement parsedStatement = getStatementParser().parse(update);
       switch (parsedStatement.getType()) {
         case UPDATE:
           parsedStatements.add(parsedStatement);
@@ -985,7 +1013,7 @@ class ConnectionImpl implements Connection {
     // Check that there are only DML statements in the input.
     List<ParsedStatement> parsedStatements = new LinkedList<>();
     for (Statement update : updates) {
-      ParsedStatement parsedStatement = parser.parse(update);
+      ParsedStatement parsedStatement = getStatementParser().parse(update);
       switch (parsedStatement.getType()) {
         case UPDATE:
           parsedStatements.add(parsedStatement);
@@ -1018,6 +1046,19 @@ class ConnectionImpl implements Connection {
     return options;
   }
 
+  private QueryOption[] mergeQueryRequestOptions(QueryOption... options) {
+    if (this.rpcPriority != null) {
+      // Shortcut for the most common scenario.
+      if (options == null || options.length == 0) {
+        options = new QueryOption[] {Options.priority(this.rpcPriority)};
+      } else {
+        options = Arrays.copyOf(options, options.length + 1);
+        options[options.length - 1] = Options.priority(this.rpcPriority);
+      }
+    }
+    return options;
+  }
+
   private UpdateOption[] mergeUpdateStatementTag(UpdateOption... options) {
     if (this.statementTag != null) {
       // Shortcut for the most common scenario.
@@ -1032,6 +1073,19 @@ class ConnectionImpl implements Connection {
     return options;
   }
 
+  private UpdateOption[] mergeUpdateRequestOptions(UpdateOption... options) {
+    if (this.rpcPriority != null) {
+      // Shortcut for the most common scenario.
+      if (options == null || options.length == 0) {
+        options = new UpdateOption[] {Options.priority(this.rpcPriority)};
+      } else {
+        options = Arrays.copyOf(options, options.length + 1);
+        options[options.length - 1] = Options.priority(this.rpcPriority);
+      }
+    }
+    return options;
+  }
+
   private ResultSet internalExecuteQuery(
       final ParsedStatement statement,
       final AnalyzeMode analyzeMode,
@@ -1040,7 +1094,8 @@ class ConnectionImpl implements Connection {
         statement.getType() == StatementType.QUERY, "Statement must be a query");
     UnitOfWork transaction = getCurrentUnitOfWorkOrStartNewUnitOfWork();
     return get(
-        transaction.executeQueryAsync(statement, analyzeMode, mergeQueryStatementTag(options)));
+        transaction.executeQueryAsync(
+            statement, analyzeMode, mergeQueryRequestOptions(mergeQueryStatementTag(options))));
   }
 
   private AsyncResultSet internalExecuteQueryAsync(
@@ -1051,7 +1106,8 @@ class ConnectionImpl implements Connection {
         statement.getType() == StatementType.QUERY, "Statement must be a query");
     UnitOfWork transaction = getCurrentUnitOfWorkOrStartNewUnitOfWork();
     return ResultSets.toAsyncResultSet(
-        transaction.executeQueryAsync(statement, analyzeMode, mergeQueryStatementTag(options)),
+        transaction.executeQueryAsync(
+            statement, analyzeMode, mergeQueryRequestOptions(mergeQueryStatementTag(options))),
         spanner.getAsyncExecutorProvider(),
         options);
   }
@@ -1061,13 +1117,15 @@ class ConnectionImpl implements Connection {
     Preconditions.checkArgument(
         update.getType() == StatementType.UPDATE, "Statement must be an update");
     UnitOfWork transaction = getCurrentUnitOfWorkOrStartNewUnitOfWork();
-    return transaction.executeUpdateAsync(update, mergeUpdateStatementTag(options));
+    return transaction.executeUpdateAsync(
+        update, mergeUpdateRequestOptions(mergeUpdateStatementTag(options)));
   }
 
   private ApiFuture<long[]> internalExecuteBatchUpdateAsync(
       List<ParsedStatement> updates, UpdateOption... options) {
     UnitOfWork transaction = getCurrentUnitOfWorkOrStartNewUnitOfWork();
-    return transaction.executeBatchUpdateAsync(updates, mergeUpdateStatementTag(options));
+    return transaction.executeBatchUpdateAsync(
+        updates, mergeUpdateRequestOptions(mergeUpdateStatementTag(options)));
   }
 
   /**
@@ -1104,6 +1162,7 @@ class ConnectionImpl implements Connection {
               .setStatementTimeout(statementTimeout)
               .withStatementExecutor(statementExecutor)
               .setTransactionTag(transactionTag)
+              .setRpcPriority(rpcPriority)
               .build();
         case READ_WRITE_TRANSACTION:
           return ReadWriteTransaction.newBuilder()
@@ -1114,6 +1173,7 @@ class ConnectionImpl implements Connection {
               .setStatementTimeout(statementTimeout)
               .withStatementExecutor(statementExecutor)
               .setTransactionTag(transactionTag)
+              .setRpcPriority(rpcPriority)
               .build();
         case DML_BATCH:
           // A DML batch can run inside the current transaction. It should therefore only
@@ -1124,6 +1184,7 @@ class ConnectionImpl implements Connection {
               .setStatementTimeout(statementTimeout)
               .withStatementExecutor(statementExecutor)
               .setStatementTag(statementTag)
+              .setRpcPriority(rpcPriority)
               .build();
         case DDL_BATCH:
           return DdlBatch.newBuilder()
