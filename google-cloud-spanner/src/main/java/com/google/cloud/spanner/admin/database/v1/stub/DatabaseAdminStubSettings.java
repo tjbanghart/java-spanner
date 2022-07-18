@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Google LLC
+ * Copyright 2022 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,6 +31,9 @@ import com.google.api.gax.grpc.GaxGrpcProperties;
 import com.google.api.gax.grpc.GrpcTransportChannel;
 import com.google.api.gax.grpc.InstantiatingGrpcChannelProvider;
 import com.google.api.gax.grpc.ProtoOperationTransformers;
+import com.google.api.gax.httpjson.GaxHttpJsonProperties;
+import com.google.api.gax.httpjson.HttpJsonTransportChannel;
+import com.google.api.gax.httpjson.InstantiatingHttpJsonChannelProvider;
 import com.google.api.gax.longrunning.OperationSnapshot;
 import com.google.api.gax.longrunning.OperationTimedPollAlgorithm;
 import com.google.api.gax.retrying.RetrySettings;
@@ -59,6 +62,8 @@ import com.google.iam.v1.TestIamPermissionsResponse;
 import com.google.longrunning.Operation;
 import com.google.protobuf.Empty;
 import com.google.spanner.admin.database.v1.Backup;
+import com.google.spanner.admin.database.v1.CopyBackupMetadata;
+import com.google.spanner.admin.database.v1.CopyBackupRequest;
 import com.google.spanner.admin.database.v1.CreateBackupMetadata;
 import com.google.spanner.admin.database.v1.CreateBackupRequest;
 import com.google.spanner.admin.database.v1.CreateDatabaseMetadata;
@@ -106,6 +111,8 @@ import org.threeten.bp.Duration;
  * <p>For example, to set the total timeout of getDatabase to 30 seconds:
  *
  * <pre>{@code
+ * // This snippet has been automatically generated for illustrative purposes only.
+ * // It may require modifications to work in your environment.
  * DatabaseAdminStubSettings.Builder databaseAdminSettingsBuilder =
  *     DatabaseAdminStubSettings.newBuilder();
  * databaseAdminSettingsBuilder
@@ -149,6 +156,9 @@ public class DatabaseAdminStubSettings extends StubSettings<DatabaseAdminStubSet
   private final UnaryCallSettings<CreateBackupRequest, Operation> createBackupSettings;
   private final OperationCallSettings<CreateBackupRequest, Backup, CreateBackupMetadata>
       createBackupOperationSettings;
+  private final UnaryCallSettings<CopyBackupRequest, Operation> copyBackupSettings;
+  private final OperationCallSettings<CopyBackupRequest, Backup, CopyBackupMetadata>
+      copyBackupOperationSettings;
   private final UnaryCallSettings<GetBackupRequest, Backup> getBackupSettings;
   private final UnaryCallSettings<UpdateBackupRequest, Backup> updateBackupSettings;
   private final UnaryCallSettings<DeleteBackupRequest, Empty> deleteBackupSettings;
@@ -473,6 +483,17 @@ public class DatabaseAdminStubSettings extends StubSettings<DatabaseAdminStubSet
     return createBackupOperationSettings;
   }
 
+  /** Returns the object with the settings used for calls to copyBackup. */
+  public UnaryCallSettings<CopyBackupRequest, Operation> copyBackupSettings() {
+    return copyBackupSettings;
+  }
+
+  /** Returns the object with the settings used for calls to copyBackup. */
+  public OperationCallSettings<CopyBackupRequest, Backup, CopyBackupMetadata>
+      copyBackupOperationSettings() {
+    return copyBackupOperationSettings;
+  }
+
   /** Returns the object with the settings used for calls to getBackup. */
   public UnaryCallSettings<GetBackupRequest, Backup> getBackupSettings() {
     return getBackupSettings;
@@ -523,12 +544,16 @@ public class DatabaseAdminStubSettings extends StubSettings<DatabaseAdminStubSet
     return listBackupOperationsSettings;
   }
 
-  @BetaApi("A restructuring of stub classes is planned, so this may break in the future")
   public DatabaseAdminStub createStub() throws IOException {
     if (getTransportChannelProvider()
         .getTransportName()
         .equals(GrpcTransportChannel.getGrpcTransportName())) {
       return GrpcDatabaseAdminStub.create(this);
+    }
+    if (getTransportChannelProvider()
+        .getTransportName()
+        .equals(HttpJsonTransportChannel.getHttpJsonTransportName())) {
+      return HttpJsonDatabaseAdminStub.create(this);
     }
     throw new UnsupportedOperationException(
         String.format(
@@ -562,10 +587,17 @@ public class DatabaseAdminStubSettings extends StubSettings<DatabaseAdminStubSet
         .setUseJwtAccessWithScope(true);
   }
 
-  /** Returns a builder for the default ChannelProvider for this service. */
+  /** Returns a builder for the default gRPC ChannelProvider for this service. */
   public static InstantiatingGrpcChannelProvider.Builder defaultGrpcTransportProviderBuilder() {
     return InstantiatingGrpcChannelProvider.newBuilder()
         .setMaxInboundMessageSize(Integer.MAX_VALUE);
+  }
+
+  /** Returns a builder for the default REST ChannelProvider for this service. */
+  @BetaApi
+  public static InstantiatingHttpJsonChannelProvider.Builder
+      defaultHttpJsonTransportProviderBuilder() {
+    return InstantiatingHttpJsonChannelProvider.newBuilder();
   }
 
   public static TransportChannelProvider defaultTransportChannelProvider() {
@@ -573,7 +605,7 @@ public class DatabaseAdminStubSettings extends StubSettings<DatabaseAdminStubSet
   }
 
   @BetaApi("The surface for customizing headers is not stable yet and may change in the future.")
-  public static ApiClientHeaderProvider.Builder defaultApiClientHeaderProviderBuilder() {
+  public static ApiClientHeaderProvider.Builder defaultGrpcApiClientHeaderProviderBuilder() {
     return ApiClientHeaderProvider.newBuilder()
         .setGeneratedLibToken(
             "gapic", GaxProperties.getLibraryVersion(DatabaseAdminStubSettings.class))
@@ -581,9 +613,28 @@ public class DatabaseAdminStubSettings extends StubSettings<DatabaseAdminStubSet
             GaxGrpcProperties.getGrpcTokenName(), GaxGrpcProperties.getGrpcVersion());
   }
 
-  /** Returns a new builder for this class. */
+  @BetaApi("The surface for customizing headers is not stable yet and may change in the future.")
+  public static ApiClientHeaderProvider.Builder defaultHttpJsonApiClientHeaderProviderBuilder() {
+    return ApiClientHeaderProvider.newBuilder()
+        .setGeneratedLibToken(
+            "gapic", GaxProperties.getLibraryVersion(DatabaseAdminStubSettings.class))
+        .setTransportToken(
+            GaxHttpJsonProperties.getHttpJsonTokenName(),
+            GaxHttpJsonProperties.getHttpJsonVersion());
+  }
+
+  public static ApiClientHeaderProvider.Builder defaultApiClientHeaderProviderBuilder() {
+    return DatabaseAdminStubSettings.defaultGrpcApiClientHeaderProviderBuilder();
+  }
+
+  /** Returns a new gRPC builder for this class. */
   public static Builder newBuilder() {
     return Builder.createDefault();
+  }
+
+  /** Returns a new REST builder for this class. */
+  public static Builder newHttpJsonBuilder() {
+    return Builder.createHttpJsonDefault();
   }
 
   /** Returns a new builder for this class. */
@@ -613,6 +664,8 @@ public class DatabaseAdminStubSettings extends StubSettings<DatabaseAdminStubSet
     testIamPermissionsSettings = settingsBuilder.testIamPermissionsSettings().build();
     createBackupSettings = settingsBuilder.createBackupSettings().build();
     createBackupOperationSettings = settingsBuilder.createBackupOperationSettings().build();
+    copyBackupSettings = settingsBuilder.copyBackupSettings().build();
+    copyBackupOperationSettings = settingsBuilder.copyBackupOperationSettings().build();
     getBackupSettings = settingsBuilder.getBackupSettings().build();
     updateBackupSettings = settingsBuilder.updateBackupSettings().build();
     deleteBackupSettings = settingsBuilder.deleteBackupSettings().build();
@@ -650,6 +703,9 @@ public class DatabaseAdminStubSettings extends StubSettings<DatabaseAdminStubSet
     private final UnaryCallSettings.Builder<CreateBackupRequest, Operation> createBackupSettings;
     private final OperationCallSettings.Builder<CreateBackupRequest, Backup, CreateBackupMetadata>
         createBackupOperationSettings;
+    private final UnaryCallSettings.Builder<CopyBackupRequest, Operation> copyBackupSettings;
+    private final OperationCallSettings.Builder<CopyBackupRequest, Backup, CopyBackupMetadata>
+        copyBackupOperationSettings;
     private final UnaryCallSettings.Builder<GetBackupRequest, Backup> getBackupSettings;
     private final UnaryCallSettings.Builder<UpdateBackupRequest, Backup> updateBackupSettings;
     private final UnaryCallSettings.Builder<DeleteBackupRequest, Empty> deleteBackupSettings;
@@ -760,6 +816,8 @@ public class DatabaseAdminStubSettings extends StubSettings<DatabaseAdminStubSet
       testIamPermissionsSettings = UnaryCallSettings.newUnaryCallSettingsBuilder();
       createBackupSettings = UnaryCallSettings.newUnaryCallSettingsBuilder();
       createBackupOperationSettings = OperationCallSettings.newBuilder();
+      copyBackupSettings = UnaryCallSettings.newUnaryCallSettingsBuilder();
+      copyBackupOperationSettings = OperationCallSettings.newBuilder();
       getBackupSettings = UnaryCallSettings.newUnaryCallSettingsBuilder();
       updateBackupSettings = UnaryCallSettings.newUnaryCallSettingsBuilder();
       deleteBackupSettings = UnaryCallSettings.newUnaryCallSettingsBuilder();
@@ -783,6 +841,7 @@ public class DatabaseAdminStubSettings extends StubSettings<DatabaseAdminStubSet
               getIamPolicySettings,
               testIamPermissionsSettings,
               createBackupSettings,
+              copyBackupSettings,
               getBackupSettings,
               updateBackupSettings,
               deleteBackupSettings,
@@ -809,6 +868,8 @@ public class DatabaseAdminStubSettings extends StubSettings<DatabaseAdminStubSet
       testIamPermissionsSettings = settings.testIamPermissionsSettings.toBuilder();
       createBackupSettings = settings.createBackupSettings.toBuilder();
       createBackupOperationSettings = settings.createBackupOperationSettings.toBuilder();
+      copyBackupSettings = settings.copyBackupSettings.toBuilder();
+      copyBackupOperationSettings = settings.copyBackupOperationSettings.toBuilder();
       getBackupSettings = settings.getBackupSettings.toBuilder();
       updateBackupSettings = settings.updateBackupSettings.toBuilder();
       deleteBackupSettings = settings.deleteBackupSettings.toBuilder();
@@ -830,6 +891,7 @@ public class DatabaseAdminStubSettings extends StubSettings<DatabaseAdminStubSet
               getIamPolicySettings,
               testIamPermissionsSettings,
               createBackupSettings,
+              copyBackupSettings,
               getBackupSettings,
               updateBackupSettings,
               deleteBackupSettings,
@@ -845,6 +907,19 @@ public class DatabaseAdminStubSettings extends StubSettings<DatabaseAdminStubSet
       builder.setTransportChannelProvider(defaultTransportChannelProvider());
       builder.setCredentialsProvider(defaultCredentialsProviderBuilder().build());
       builder.setInternalHeaderProvider(defaultApiClientHeaderProviderBuilder().build());
+      builder.setEndpoint(getDefaultEndpoint());
+      builder.setMtlsEndpoint(getDefaultMtlsEndpoint());
+      builder.setSwitchToMtlsEndpointAllowed(true);
+
+      return initDefaults(builder);
+    }
+
+    private static Builder createHttpJsonDefault() {
+      Builder builder = new Builder(((ClientContext) null));
+
+      builder.setTransportChannelProvider(defaultHttpJsonTransportProviderBuilder().build());
+      builder.setCredentialsProvider(defaultCredentialsProviderBuilder().build());
+      builder.setInternalHeaderProvider(defaultHttpJsonApiClientHeaderProviderBuilder().build());
       builder.setEndpoint(getDefaultEndpoint());
       builder.setMtlsEndpoint(getDefaultMtlsEndpoint());
       builder.setSwitchToMtlsEndpointAllowed(true);
@@ -900,6 +975,11 @@ public class DatabaseAdminStubSettings extends StubSettings<DatabaseAdminStubSet
 
       builder
           .createBackupSettings()
+          .setRetryableCodes(RETRYABLE_CODE_DEFINITIONS.get("no_retry_2_codes"))
+          .setRetrySettings(RETRY_PARAM_DEFINITIONS.get("no_retry_2_params"));
+
+      builder
+          .copyBackupSettings()
           .setRetryableCodes(RETRYABLE_CODE_DEFINITIONS.get("no_retry_2_codes"))
           .setRetrySettings(RETRY_PARAM_DEFINITIONS.get("no_retry_2_params"));
 
@@ -1009,6 +1089,29 @@ public class DatabaseAdminStubSettings extends StubSettings<DatabaseAdminStubSet
                       .setRpcTimeoutMultiplier(1.0)
                       .setMaxRpcTimeout(Duration.ZERO)
                       .setTotalTimeout(Duration.ofMillis(172800000L))
+                      .build()));
+
+      builder
+          .copyBackupOperationSettings()
+          .setInitialCallSettings(
+              UnaryCallSettings.<CopyBackupRequest, OperationSnapshot>newUnaryCallSettingsBuilder()
+                  .setRetryableCodes(RETRYABLE_CODE_DEFINITIONS.get("no_retry_2_codes"))
+                  .setRetrySettings(RETRY_PARAM_DEFINITIONS.get("no_retry_2_params"))
+                  .build())
+          .setResponseTransformer(
+              ProtoOperationTransformers.ResponseTransformer.create(Backup.class))
+          .setMetadataTransformer(
+              ProtoOperationTransformers.MetadataTransformer.create(CopyBackupMetadata.class))
+          .setPollingAlgorithm(
+              OperationTimedPollAlgorithm.create(
+                  RetrySettings.newBuilder()
+                      .setInitialRetryDelay(Duration.ofMillis(5000L))
+                      .setRetryDelayMultiplier(1.5)
+                      .setMaxRetryDelay(Duration.ofMillis(45000L))
+                      .setInitialRpcTimeout(Duration.ZERO)
+                      .setRpcTimeoutMultiplier(1.0)
+                      .setMaxRpcTimeout(Duration.ZERO)
+                      .setTotalTimeout(Duration.ofMillis(300000L))
                       .build()));
 
       builder
@@ -1130,6 +1233,19 @@ public class DatabaseAdminStubSettings extends StubSettings<DatabaseAdminStubSet
     public OperationCallSettings.Builder<CreateBackupRequest, Backup, CreateBackupMetadata>
         createBackupOperationSettings() {
       return createBackupOperationSettings;
+    }
+
+    /** Returns the builder for the settings used for calls to copyBackup. */
+    public UnaryCallSettings.Builder<CopyBackupRequest, Operation> copyBackupSettings() {
+      return copyBackupSettings;
+    }
+
+    /** Returns the builder for the settings used for calls to copyBackup. */
+    @BetaApi(
+        "The surface for use by generated code is not stable yet and may change in the future.")
+    public OperationCallSettings.Builder<CopyBackupRequest, Backup, CopyBackupMetadata>
+        copyBackupOperationSettings() {
+      return copyBackupOperationSettings;
     }
 
     /** Returns the builder for the settings used for calls to getBackup. */

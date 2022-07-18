@@ -22,6 +22,7 @@ import com.google.cloud.Policy;
 import com.google.cloud.Timestamp;
 import com.google.cloud.spanner.Options.ListOption;
 import com.google.longrunning.Operation;
+import com.google.spanner.admin.database.v1.CopyBackupMetadata;
 import com.google.spanner.admin.database.v1.CreateBackupMetadata;
 import com.google.spanner.admin.database.v1.CreateDatabaseMetadata;
 import com.google.spanner.admin.database.v1.CreateDatabaseRequest;
@@ -68,6 +69,39 @@ public interface DatabaseAdminClient {
    */
   OperationFuture<Database, CreateDatabaseMetadata> createDatabase(
       String instanceId, String databaseId, Iterable<String> statements) throws SpannerException;
+
+  /**
+   * Creates a new database in a Cloud Spanner instance with the given {@link Dialect}.
+   *
+   * <p>Example to create database.
+   *
+   * <pre>{@code
+   * String instanceId = "my_instance_id";
+   * String createDatabaseStatement = "CREATE DATABASE \"my-database\"";
+   * Operation<Database, CreateDatabaseMetadata> op = dbAdminClient
+   *     .createDatabase(
+   *         instanceId,
+   *         createDatabaseStatement,
+   *         Dialect.POSTGRESQL
+   *         Collections.emptyList());
+   * Database db = op.waitFor().getResult();
+   * }</pre>
+   *
+   * @param instanceId the id of the instance in which to create the database.
+   * @param createDatabaseStatement the CREATE DATABASE statement for the database. This statement
+   *     must use the dialect for the new database.
+   * @param dialect the dialect that the new database should use.
+   * @param statements DDL statements to run while creating the database, for example {@code CREATE
+   *     TABLE MyTable ( ... )}. This should not include {@code CREATE DATABASE} statement.
+   */
+  default OperationFuture<Database, CreateDatabaseMetadata> createDatabase(
+      String instanceId,
+      String createDatabaseStatement,
+      Dialect dialect,
+      Iterable<String> statements)
+      throws SpannerException {
+    throw new UnsupportedOperationException("Unimplemented");
+  }
 
   /**
    * Creates a database in a Cloud Spanner instance. Any configuration options in the {@link
@@ -177,6 +211,73 @@ public interface DatabaseAdminClient {
    * @param backup the backup to be created
    */
   OperationFuture<Backup, CreateBackupMetadata> createBackup(Backup backup) throws SpannerException;
+
+  /**
+   * Creates a copy of backup from an existing backup in a Cloud Spanner instance.
+   *
+   * <p>Example to copy a backup.
+   *
+   * <pre>{@code
+   * String instanceId                  ="my_instance_id";
+   * String sourceBackupId              ="source_backup_id";
+   * String destinationBackupId         ="destination_backup_id";
+   * Timestamp expireTime               =Timestamp.ofTimeMicroseconds(micros);
+   * OperationFuture<Backup, CopyBackupMetadata> op = dbAdminClient
+   *     .copyBackup(
+   *         instanceId,
+   *         sourceBackupId,
+   *         destinationBackupId,
+   *         expireTime);
+   * Backup backup = op.get();
+   * }</pre>
+   *
+   * @param instanceId the id of the instance where the source backup is located and where the new
+   *     backup will be created.
+   * @param sourceBackupId the source backup id.
+   * @param destinationBackupId the id of the backup which will be created. It must conform to the
+   *     regular expression [a-z][a-z0-9_\-]*[a-z0-9] and be between 2 and 60 characters in length.
+   * @param expireTime the time that the new backup will automatically expire.
+   */
+  default OperationFuture<Backup, CopyBackupMetadata> copyBackup(
+      String instanceId, String sourceBackupId, String destinationBackupId, Timestamp expireTime) {
+    throw new UnsupportedOperationException("Unimplemented");
+  }
+
+  /**
+   * Creates a copy of backup from an existing backup in Cloud Spanner in the same instance. Any
+   * configuration options in the {@link Backup} instance will be included in the {@link
+   * com.google.spanner.admin.database.v1.CopyBackupRequest}.
+   *
+   * <p>The expire time of the new backup must be set and be at least 6 hours and at most 366 days
+   * after the creation time of the existing backup that is being copied.
+   *
+   * <p>Example to create a copy of a backup.
+   *
+   * <pre>{@code
+   * BackupId sourceBackupId = BackupId.of("source-project", "source-instance", "source-backup-id");
+   * BackupId destinationBackupId = BackupId.of("destination-project", "destination-instance", "new-backup-id");
+   * Timestamp expireTime = Timestamp.ofTimeMicroseconds(expireTimeMicros);
+   * EncryptionConfig encryptionConfig =
+   *         EncryptionConfig.ofKey(
+   *             "projects/my-project/locations/some-location/keyRings/my-keyring/cryptoKeys/my-key"));
+   *
+   * Backup destinationBackup = dbAdminClient
+   *     .newBackupBuilder(destinationBackupId)
+   *     .setExpireTime(expireTime)
+   *     .setEncryptionConfig(encryptionConfig)
+   *     .build();
+   *
+   * OperationFuture<Backup, CopyBackupMetadata> op = dbAdminClient.copyBackup(sourceBackupId, destinationBackup);
+   * Backup copiedBackup = op.get();
+   * }</pre>
+   *
+   * @param sourceBackupId the backup to be copied
+   * @param destinationBackup the new backup to create
+   */
+  default OperationFuture<Backup, CopyBackupMetadata> copyBackup(
+      BackupId sourceBackupId, Backup destinationBackup) {
+    throw new UnsupportedOperationException("Unimplemented");
+  }
 
   /**
    * Restore a database from a backup. The database that is restored will be created and may not

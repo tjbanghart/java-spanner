@@ -109,4 +109,8 @@ interface ConnectionStatementExecutor {
   StatementResult statementSetRPCPriority(Priority priority);
 
   StatementResult statementShowRPCPriority();
+
+  StatementResult statementShowTransactionIsolationLevel();
+
+  StatementResult statementExplain(String sql);
 }

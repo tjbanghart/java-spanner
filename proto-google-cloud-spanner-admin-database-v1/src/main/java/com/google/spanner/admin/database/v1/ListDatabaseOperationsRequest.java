@@ -110,6 +110,8 @@ public final class ListDatabaseOperationsRequest extends com.google.protobuf.Gen
       }
     } catch (com.google.protobuf.InvalidProtocolBufferException e) {
       throw e.setUnfinishedMessage(this);
+    } catch (com.google.protobuf.UninitializedMessageException e) {
+      throw e.asInvalidProtocolBufferException().setUnfinishedMessage(this);
     } catch (java.io.IOException e) {
       throw new com.google.protobuf.InvalidProtocolBufferException(e).setUnfinishedMessage(this);
     } finally {
@@ -208,6 +210,8 @@ public final class ListDatabaseOperationsRequest extends com.google.protobuf.Gen
    *      for [RestoreDatabaseMetadata][google.spanner.admin.database.v1.RestoreDatabaseMetadata] is
    *      `type.googleapis.com/google.spanner.admin.database.v1.RestoreDatabaseMetadata`.
    *   * `metadata.&lt;field_name&gt;` - any field in metadata.value.
+   *      `metadata.&#64;type` must be specified first, if filtering on metadata
+   *      fields.
    *   * `error` - Error associated with the long-running operation.
    *   * `response.&#64;type` - the type of response.
    *   * `response.&lt;field_name&gt;` - any field in response.value.
@@ -264,6 +268,8 @@ public final class ListDatabaseOperationsRequest extends com.google.protobuf.Gen
    *      for [RestoreDatabaseMetadata][google.spanner.admin.database.v1.RestoreDatabaseMetadata] is
    *      `type.googleapis.com/google.spanner.admin.database.v1.RestoreDatabaseMetadata`.
    *   * `metadata.&lt;field_name&gt;` - any field in metadata.value.
+   *      `metadata.&#64;type` must be specified first, if filtering on metadata
+   *      fields.
    *   * `error` - Error associated with the long-running operation.
    *   * `response.&#64;type` - the type of response.
    *   * `response.&lt;field_name&gt;` - any field in response.value.
@@ -892,6 +898,8 @@ public final class ListDatabaseOperationsRequest extends com.google.protobuf.Gen
      *      for [RestoreDatabaseMetadata][google.spanner.admin.database.v1.RestoreDatabaseMetadata] is
      *      `type.googleapis.com/google.spanner.admin.database.v1.RestoreDatabaseMetadata`.
      *   * `metadata.&lt;field_name&gt;` - any field in metadata.value.
+     *      `metadata.&#64;type` must be specified first, if filtering on metadata
+     *      fields.
      *   * `error` - Error associated with the long-running operation.
      *   * `response.&#64;type` - the type of response.
      *   * `response.&lt;field_name&gt;` - any field in response.value.
@@ -947,6 +955,8 @@ public final class ListDatabaseOperationsRequest extends com.google.protobuf.Gen
      *      for [RestoreDatabaseMetadata][google.spanner.admin.database.v1.RestoreDatabaseMetadata] is
      *      `type.googleapis.com/google.spanner.admin.database.v1.RestoreDatabaseMetadata`.
      *   * `metadata.&lt;field_name&gt;` - any field in metadata.value.
+     *      `metadata.&#64;type` must be specified first, if filtering on metadata
+     *      fields.
      *   * `error` - Error associated with the long-running operation.
      *   * `response.&#64;type` - the type of response.
      *   * `response.&lt;field_name&gt;` - any field in response.value.
@@ -1002,6 +1012,8 @@ public final class ListDatabaseOperationsRequest extends com.google.protobuf.Gen
      *      for [RestoreDatabaseMetadata][google.spanner.admin.database.v1.RestoreDatabaseMetadata] is
      *      `type.googleapis.com/google.spanner.admin.database.v1.RestoreDatabaseMetadata`.
      *   * `metadata.&lt;field_name&gt;` - any field in metadata.value.
+     *      `metadata.&#64;type` must be specified first, if filtering on metadata
+     *      fields.
      *   * `error` - Error associated with the long-running operation.
      *   * `response.&#64;type` - the type of response.
      *   * `response.&lt;field_name&gt;` - any field in response.value.
@@ -1056,6 +1068,8 @@ public final class ListDatabaseOperationsRequest extends com.google.protobuf.Gen
      *      for [RestoreDatabaseMetadata][google.spanner.admin.database.v1.RestoreDatabaseMetadata] is
      *      `type.googleapis.com/google.spanner.admin.database.v1.RestoreDatabaseMetadata`.
      *   * `metadata.&lt;field_name&gt;` - any field in metadata.value.
+     *      `metadata.&#64;type` must be specified first, if filtering on metadata
+     *      fields.
      *   * `error` - Error associated with the long-running operation.
      *   * `response.&#64;type` - the type of response.
      *   * `response.&lt;field_name&gt;` - any field in response.value.
@@ -1106,6 +1120,8 @@ public final class ListDatabaseOperationsRequest extends com.google.protobuf.Gen
      *      for [RestoreDatabaseMetadata][google.spanner.admin.database.v1.RestoreDatabaseMetadata] is
      *      `type.googleapis.com/google.spanner.admin.database.v1.RestoreDatabaseMetadata`.
      *   * `metadata.&lt;field_name&gt;` - any field in metadata.value.
+     *      `metadata.&#64;type` must be specified first, if filtering on metadata
+     *      fields.
      *   * `error` - Error associated with the long-running operation.
      *   * `response.&#64;type` - the type of response.
      *   * `response.&lt;field_name&gt;` - any field in response.value.

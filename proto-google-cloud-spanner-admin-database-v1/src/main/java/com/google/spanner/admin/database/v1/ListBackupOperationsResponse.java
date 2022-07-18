@@ -101,6 +101,8 @@ public final class ListBackupOperationsResponse extends com.google.protobuf.Gene
       }
     } catch (com.google.protobuf.InvalidProtocolBufferException e) {
       throw e.setUnfinishedMessage(this);
+    } catch (com.google.protobuf.UninitializedMessageException e) {
+      throw e.asInvalidProtocolBufferException().setUnfinishedMessage(this);
     } catch (java.io.IOException e) {
       throw new com.google.protobuf.InvalidProtocolBufferException(e).setUnfinishedMessage(this);
     } finally {
@@ -135,11 +137,11 @@ public final class ListBackupOperationsResponse extends com.google.protobuf.Gene
    * <pre>
    * The list of matching backup [long-running
    * operations][google.longrunning.Operation]. Each operation's name will be
-   * prefixed by the backup's name and the operation's
-   * [metadata][google.longrunning.Operation.metadata] will be of type
-   * [CreateBackupMetadata][google.spanner.admin.database.v1.CreateBackupMetadata]. Operations returned include those that are
-   * pending or have completed/failed/canceled within the last 7 days.
-   * Operations returned are ordered by
+   * prefixed by the backup's name. The operation's
+   * [metadata][google.longrunning.Operation.metadata] field type
+   * `metadata.type_url` describes the type of the metadata. Operations returned
+   * include those that are pending or have completed/failed/canceled within the
+   * last 7 days. Operations returned are ordered by
    * `operation.metadata.value.progress.start_time` in descending order starting
    * from the most recently started operation.
    * </pre>
@@ -156,11 +158,11 @@ public final class ListBackupOperationsResponse extends com.google.protobuf.Gene
    * <pre>
    * The list of matching backup [long-running
    * operations][google.longrunning.Operation]. Each operation's name will be
-   * prefixed by the backup's name and the operation's
-   * [metadata][google.longrunning.Operation.metadata] will be of type
-   * [CreateBackupMetadata][google.spanner.admin.database.v1.CreateBackupMetadata]. Operations returned include those that are
-   * pending or have completed/failed/canceled within the last 7 days.
-   * Operations returned are ordered by
+   * prefixed by the backup's name. The operation's
+   * [metadata][google.longrunning.Operation.metadata] field type
+   * `metadata.type_url` describes the type of the metadata. Operations returned
+   * include those that are pending or have completed/failed/canceled within the
+   * last 7 days. Operations returned are ordered by
    * `operation.metadata.value.progress.start_time` in descending order starting
    * from the most recently started operation.
    * </pre>
@@ -178,11 +180,11 @@ public final class ListBackupOperationsResponse extends com.google.protobuf.Gene
    * <pre>
    * The list of matching backup [long-running
    * operations][google.longrunning.Operation]. Each operation's name will be
-   * prefixed by the backup's name and the operation's
-   * [metadata][google.longrunning.Operation.metadata] will be of type
-   * [CreateBackupMetadata][google.spanner.admin.database.v1.CreateBackupMetadata]. Operations returned include those that are
-   * pending or have completed/failed/canceled within the last 7 days.
-   * Operations returned are ordered by
+   * prefixed by the backup's name. The operation's
+   * [metadata][google.longrunning.Operation.metadata] field type
+   * `metadata.type_url` describes the type of the metadata. Operations returned
+   * include those that are pending or have completed/failed/canceled within the
+   * last 7 days. Operations returned are ordered by
    * `operation.metadata.value.progress.start_time` in descending order starting
    * from the most recently started operation.
    * </pre>
@@ -199,11 +201,11 @@ public final class ListBackupOperationsResponse extends com.google.protobuf.Gene
    * <pre>
    * The list of matching backup [long-running
    * operations][google.longrunning.Operation]. Each operation's name will be
-   * prefixed by the backup's name and the operation's
-   * [metadata][google.longrunning.Operation.metadata] will be of type
-   * [CreateBackupMetadata][google.spanner.admin.database.v1.CreateBackupMetadata]. Operations returned include those that are
-   * pending or have completed/failed/canceled within the last 7 days.
-   * Operations returned are ordered by
+   * prefixed by the backup's name. The operation's
+   * [metadata][google.longrunning.Operation.metadata] field type
+   * `metadata.type_url` describes the type of the metadata. Operations returned
+   * include those that are pending or have completed/failed/canceled within the
+   * last 7 days. Operations returned are ordered by
    * `operation.metadata.value.progress.start_time` in descending order starting
    * from the most recently started operation.
    * </pre>
@@ -220,11 +222,11 @@ public final class ListBackupOperationsResponse extends com.google.protobuf.Gene
    * <pre>
    * The list of matching backup [long-running
    * operations][google.longrunning.Operation]. Each operation's name will be
-   * prefixed by the backup's name and the operation's
-   * [metadata][google.longrunning.Operation.metadata] will be of type
-   * [CreateBackupMetadata][google.spanner.admin.database.v1.CreateBackupMetadata]. Operations returned include those that are
-   * pending or have completed/failed/canceled within the last 7 days.
-   * Operations returned are ordered by
+   * prefixed by the backup's name. The operation's
+   * [metadata][google.longrunning.Operation.metadata] field type
+   * `metadata.type_url` describes the type of the metadata. Operations returned
+   * include those that are pending or have completed/failed/canceled within the
+   * last 7 days. Operations returned are ordered by
    * `operation.metadata.value.progress.start_time` in descending order starting
    * from the most recently started operation.
    * </pre>
@@ -695,11 +697,11 @@ public final class ListBackupOperationsResponse extends com.google.protobuf.Gene
      * <pre>
      * The list of matching backup [long-running
      * operations][google.longrunning.Operation]. Each operation's name will be
-     * prefixed by the backup's name and the operation's
-     * [metadata][google.longrunning.Operation.metadata] will be of type
-     * [CreateBackupMetadata][google.spanner.admin.database.v1.CreateBackupMetadata]. Operations returned include those that are
-     * pending or have completed/failed/canceled within the last 7 days.
-     * Operations returned are ordered by
+     * prefixed by the backup's name. The operation's
+     * [metadata][google.longrunning.Operation.metadata] field type
+     * `metadata.type_url` describes the type of the metadata. Operations returned
+     * include those that are pending or have completed/failed/canceled within the
+     * last 7 days. Operations returned are ordered by
      * `operation.metadata.value.progress.start_time` in descending order starting
      * from the most recently started operation.
      * </pre>
@@ -719,11 +721,11 @@ public final class ListBackupOperationsResponse extends com.google.protobuf.Gene
      * <pre>
      * The list of matching backup [long-running
      * operations][google.longrunning.Operation]. Each operation's name will be
-     * prefixed by the backup's name and the operation's
-     * [metadata][google.longrunning.Operation.metadata] will be of type
-     * [CreateBackupMetadata][google.spanner.admin.database.v1.CreateBackupMetadata]. Operations returned include those that are
-     * pending or have completed/failed/canceled within the last 7 days.
-     * Operations returned are ordered by
+     * prefixed by the backup's name. The operation's
+     * [metadata][google.longrunning.Operation.metadata] field type
+     * `metadata.type_url` describes the type of the metadata. Operations returned
+     * include those that are pending or have completed/failed/canceled within the
+     * last 7 days. Operations returned are ordered by
      * `operation.metadata.value.progress.start_time` in descending order starting
      * from the most recently started operation.
      * </pre>
@@ -743,11 +745,11 @@ public final class ListBackupOperationsResponse extends com.google.protobuf.Gene
      * <pre>
      * The list of matching backup [long-running
      * operations][google.longrunning.Operation]. Each operation's name will be
-     * prefixed by the backup's name and the operation's
-     * [metadata][google.longrunning.Operation.metadata] will be of type
-     * [CreateBackupMetadata][google.spanner.admin.database.v1.CreateBackupMetadata]. Operations returned include those that are
-     * pending or have completed/failed/canceled within the last 7 days.
-     * Operations returned are ordered by
+     * prefixed by the backup's name. The operation's
+     * [metadata][google.longrunning.Operation.metadata] field type
+     * `metadata.type_url` describes the type of the metadata. Operations returned
+     * include those that are pending or have completed/failed/canceled within the
+     * last 7 days. Operations returned are ordered by
      * `operation.metadata.value.progress.start_time` in descending order starting
      * from the most recently started operation.
      * </pre>
@@ -767,11 +769,11 @@ public final class ListBackupOperationsResponse extends com.google.protobuf.Gene
      * <pre>
      * The list of matching backup [long-running
      * operations][google.longrunning.Operation]. Each operation's name will be
-     * prefixed by the backup's name and the operation's
-     * [metadata][google.longrunning.Operation.metadata] will be of type
-     * [CreateBackupMetadata][google.spanner.admin.database.v1.CreateBackupMetadata]. Operations returned include those that are
-     * pending or have completed/failed/canceled within the last 7 days.
-     * Operations returned are ordered by
+     * prefixed by the backup's name. The operation's
+     * [metadata][google.longrunning.Operation.metadata] field type
+     * `metadata.type_url` describes the type of the metadata. Operations returned
+     * include those that are pending or have completed/failed/canceled within the
+     * last 7 days. Operations returned are ordered by
      * `operation.metadata.value.progress.start_time` in descending order starting
      * from the most recently started operation.
      * </pre>
@@ -797,11 +799,11 @@ public final class ListBackupOperationsResponse extends com.google.protobuf.Gene
      * <pre>
      * The list of matching backup [long-running
      * operations][google.longrunning.Operation]. Each operation's name will be
-     * prefixed by the backup's name and the operation's
-     * [metadata][google.longrunning.Operation.metadata] will be of type
-     * [CreateBackupMetadata][google.spanner.admin.database.v1.CreateBackupMetadata]. Operations returned include those that are
-     * pending or have completed/failed/canceled within the last 7 days.
-     * Operations returned are ordered by
+     * prefixed by the backup's name. The operation's
+     * [metadata][google.longrunning.Operation.metadata] field type
+     * `metadata.type_url` describes the type of the metadata. Operations returned
+     * include those that are pending or have completed/failed/canceled within the
+     * last 7 days. Operations returned are ordered by
      * `operation.metadata.value.progress.start_time` in descending order starting
      * from the most recently started operation.
      * </pre>
@@ -825,11 +827,11 @@ public final class ListBackupOperationsResponse extends com.google.protobuf.Gene
      * <pre>
      * The list of matching backup [long-running
      * operations][google.longrunning.Operation]. Each operation's name will be
-     * prefixed by the backup's name and the operation's
-     * [metadata][google.longrunning.Operation.metadata] will be of type
-     * [CreateBackupMetadata][google.spanner.admin.database.v1.CreateBackupMetadata]. Operations returned include those that are
-     * pending or have completed/failed/canceled within the last 7 days.
-     * Operations returned are ordered by
+     * prefixed by the backup's name. The operation's
+     * [metadata][google.longrunning.Operation.metadata] field type
+     * `metadata.type_url` describes the type of the metadata. Operations returned
+     * include those that are pending or have completed/failed/canceled within the
+     * last 7 days. Operations returned are ordered by
      * `operation.metadata.value.progress.start_time` in descending order starting
      * from the most recently started operation.
      * </pre>
@@ -855,11 +857,11 @@ public final class ListBackupOperationsResponse extends com.google.protobuf.Gene
      * <pre>
      * The list of matching backup [long-running
      * operations][google.longrunning.Operation]. Each operation's name will be
-     * prefixed by the backup's name and the operation's
-     * [metadata][google.longrunning.Operation.metadata] will be of type
-     * [CreateBackupMetadata][google.spanner.admin.database.v1.CreateBackupMetadata]. Operations returned include those that are
-     * pending or have completed/failed/canceled within the last 7 days.
-     * Operations returned are ordered by
+     * prefixed by the backup's name. The operation's
+     * [metadata][google.longrunning.Operation.metadata] field type
+     * `metadata.type_url` describes the type of the metadata. Operations returned
+     * include those that are pending or have completed/failed/canceled within the
+     * last 7 days. Operations returned are ordered by
      * `operation.metadata.value.progress.start_time` in descending order starting
      * from the most recently started operation.
      * </pre>
@@ -885,11 +887,11 @@ public final class ListBackupOperationsResponse extends com.google.protobuf.Gene
      * <pre>
      * The list of matching backup [long-running
      * operations][google.longrunning.Operation]. Each operation's name will be
-     * prefixed by the backup's name and the operation's
-     * [metadata][google.longrunning.Operation.metadata] will be of type
-     * [CreateBackupMetadata][google.spanner.admin.database.v1.CreateBackupMetadata]. Operations returned include those that are
-     * pending or have completed/failed/canceled within the last 7 days.
-     * Operations returned are ordered by
+     * prefixed by the backup's name. The operation's
+     * [metadata][google.longrunning.Operation.metadata] field type
+     * `metadata.type_url` describes the type of the metadata. Operations returned
+     * include those that are pending or have completed/failed/canceled within the
+     * last 7 days. Operations returned are ordered by
      * `operation.metadata.value.progress.start_time` in descending order starting
      * from the most recently started operation.
      * </pre>
@@ -912,11 +914,11 @@ public final class ListBackupOperationsResponse extends com.google.protobuf.Gene
      * <pre>
      * The list of matching backup [long-running
      * operations][google.longrunning.Operation]. Each operation's name will be
-     * prefixed by the backup's name and the operation's
-     * [metadata][google.longrunning.Operation.metadata] will be of type
-     * [CreateBackupMetadata][google.spanner.admin.database.v1.CreateBackupMetadata]. Operations returned include those that are
-     * pending or have completed/failed/canceled within the last 7 days.
-     * Operations returned are ordered by
+     * prefixed by the backup's name. The operation's
+     * [metadata][google.longrunning.Operation.metadata] field type
+     * `metadata.type_url` describes the type of the metadata. Operations returned
+     * include those that are pending or have completed/failed/canceled within the
+     * last 7 days. Operations returned are ordered by
      * `operation.metadata.value.progress.start_time` in descending order starting
      * from the most recently started operation.
      * </pre>
@@ -940,11 +942,11 @@ public final class ListBackupOperationsResponse extends com.google.protobuf.Gene
      * <pre>
      * The list of matching backup [long-running
      * operations][google.longrunning.Operation]. Each operation's name will be
-     * prefixed by the backup's name and the operation's
-     * [metadata][google.longrunning.Operation.metadata] will be of type
-     * [CreateBackupMetadata][google.spanner.admin.database.v1.CreateBackupMetadata]. Operations returned include those that are
-     * pending or have completed/failed/canceled within the last 7 days.
-     * Operations returned are ordered by
+     * prefixed by the backup's name. The operation's
+     * [metadata][google.longrunning.Operation.metadata] field type
+     * `metadata.type_url` describes the type of the metadata. Operations returned
+     * include those that are pending or have completed/failed/canceled within the
+     * last 7 days. Operations returned are ordered by
      * `operation.metadata.value.progress.start_time` in descending order starting
      * from the most recently started operation.
      * </pre>
@@ -968,11 +970,11 @@ public final class ListBackupOperationsResponse extends com.google.protobuf.Gene
      * <pre>
      * The list of matching backup [long-running
      * operations][google.longrunning.Operation]. Each operation's name will be
-     * prefixed by the backup's name and the operation's
-     * [metadata][google.longrunning.Operation.metadata] will be of type
-     * [CreateBackupMetadata][google.spanner.admin.database.v1.CreateBackupMetadata]. Operations returned include those that are
-     * pending or have completed/failed/canceled within the last 7 days.
-     * Operations returned are ordered by
+     * prefixed by the backup's name. The operation's
+     * [metadata][google.longrunning.Operation.metadata] field type
+     * `metadata.type_url` describes the type of the metadata. Operations returned
+     * include those that are pending or have completed/failed/canceled within the
+     * last 7 days. Operations returned are ordered by
      * `operation.metadata.value.progress.start_time` in descending order starting
      * from the most recently started operation.
      * </pre>
@@ -995,11 +997,11 @@ public final class ListBackupOperationsResponse extends com.google.protobuf.Gene
      * <pre>
      * The list of matching backup [long-running
      * operations][google.longrunning.Operation]. Each operation's name will be
-     * prefixed by the backup's name and the operation's
-     * [metadata][google.longrunning.Operation.metadata] will be of type
-     * [CreateBackupMetadata][google.spanner.admin.database.v1.CreateBackupMetadata]. Operations returned include those that are
-     * pending or have completed/failed/canceled within the last 7 days.
-     * Operations returned are ordered by
+     * prefixed by the backup's name. The operation's
+     * [metadata][google.longrunning.Operation.metadata] field type
+     * `metadata.type_url` describes the type of the metadata. Operations returned
+     * include those that are pending or have completed/failed/canceled within the
+     * last 7 days. Operations returned are ordered by
      * `operation.metadata.value.progress.start_time` in descending order starting
      * from the most recently started operation.
      * </pre>
@@ -1022,11 +1024,11 @@ public final class ListBackupOperationsResponse extends com.google.protobuf.Gene
      * <pre>
      * The list of matching backup [long-running
      * operations][google.longrunning.Operation]. Each operation's name will be
-     * prefixed by the backup's name and the operation's
-     * [metadata][google.longrunning.Operation.metadata] will be of type
-     * [CreateBackupMetadata][google.spanner.admin.database.v1.CreateBackupMetadata]. Operations returned include those that are
-     * pending or have completed/failed/canceled within the last 7 days.
-     * Operations returned are ordered by
+     * prefixed by the backup's name. The operation's
+     * [metadata][google.longrunning.Operation.metadata] field type
+     * `metadata.type_url` describes the type of the metadata. Operations returned
+     * include those that are pending or have completed/failed/canceled within the
+     * last 7 days. Operations returned are ordered by
      * `operation.metadata.value.progress.start_time` in descending order starting
      * from the most recently started operation.
      * </pre>
@@ -1042,11 +1044,11 @@ public final class ListBackupOperationsResponse extends com.google.protobuf.Gene
      * <pre>
      * The list of matching backup [long-running
      * operations][google.longrunning.Operation]. Each operation's name will be
-     * prefixed by the backup's name and the operation's
-     * [metadata][google.longrunning.Operation.metadata] will be of type
-     * [CreateBackupMetadata][google.spanner.admin.database.v1.CreateBackupMetadata]. Operations returned include those that are
-     * pending or have completed/failed/canceled within the last 7 days.
-     * Operations returned are ordered by
+     * prefixed by the backup's name. The operation's
+     * [metadata][google.longrunning.Operation.metadata] field type
+     * `metadata.type_url` describes the type of the metadata. Operations returned
+     * include those that are pending or have completed/failed/canceled within the
+     * last 7 days. Operations returned are ordered by
      * `operation.metadata.value.progress.start_time` in descending order starting
      * from the most recently started operation.
      * </pre>
@@ -1066,11 +1068,11 @@ public final class ListBackupOperationsResponse extends com.google.protobuf.Gene
      * <pre>
      * The list of matching backup [long-running
      * operations][google.longrunning.Operation]. Each operation's name will be
-     * prefixed by the backup's name and the operation's
-     * [metadata][google.longrunning.Operation.metadata] will be of type
-     * [CreateBackupMetadata][google.spanner.admin.database.v1.CreateBackupMetadata]. Operations returned include those that are
-     * pending or have completed/failed/canceled within the last 7 days.
-     * Operations returned are ordered by
+     * prefixed by the backup's name. The operation's
+     * [metadata][google.longrunning.Operation.metadata] field type
+     * `metadata.type_url` describes the type of the metadata. Operations returned
+     * include those that are pending or have completed/failed/canceled within the
+     * last 7 days. Operations returned are ordered by
      * `operation.metadata.value.progress.start_time` in descending order starting
      * from the most recently started operation.
      * </pre>
@@ -1091,11 +1093,11 @@ public final class ListBackupOperationsResponse extends com.google.protobuf.Gene
      * <pre>
      * The list of matching backup [long-running
      * operations][google.longrunning.Operation]. Each operation's name will be
-     * prefixed by the backup's name and the operation's
-     * [metadata][google.longrunning.Operation.metadata] will be of type
-     * [CreateBackupMetadata][google.spanner.admin.database.v1.CreateBackupMetadata]. Operations returned include those that are
-     * pending or have completed/failed/canceled within the last 7 days.
-     * Operations returned are ordered by
+     * prefixed by the backup's name. The operation's
+     * [metadata][google.longrunning.Operation.metadata] field type
+     * `metadata.type_url` describes the type of the metadata. Operations returned
+     * include those that are pending or have completed/failed/canceled within the
+     * last 7 days. Operations returned are ordered by
      * `operation.metadata.value.progress.start_time` in descending order starting
      * from the most recently started operation.
      * </pre>
@@ -1112,11 +1114,11 @@ public final class ListBackupOperationsResponse extends com.google.protobuf.Gene
      * <pre>
      * The list of matching backup [long-running
      * operations][google.longrunning.Operation]. Each operation's name will be
-     * prefixed by the backup's name and the operation's
-     * [metadata][google.longrunning.Operation.metadata] will be of type
-     * [CreateBackupMetadata][google.spanner.admin.database.v1.CreateBackupMetadata]. Operations returned include those that are
-     * pending or have completed/failed/canceled within the last 7 days.
-     * Operations returned are ordered by
+     * prefixed by the backup's name. The operation's
+     * [metadata][google.longrunning.Operation.metadata] field type
+     * `metadata.type_url` describes the type of the metadata. Operations returned
+     * include those that are pending or have completed/failed/canceled within the
+     * last 7 days. Operations returned are ordered by
      * `operation.metadata.value.progress.start_time` in descending order starting
      * from the most recently started operation.
      * </pre>
@@ -1133,11 +1135,11 @@ public final class ListBackupOperationsResponse extends com.google.protobuf.Gene
      * <pre>
      * The list of matching backup [long-running
      * operations][google.longrunning.Operation]. Each operation's name will be
-     * prefixed by the backup's name and the operation's
-     * [metadata][google.longrunning.Operation.metadata] will be of type
-     * [CreateBackupMetadata][google.spanner.admin.database.v1.CreateBackupMetadata]. Operations returned include those that are
-     * pending or have completed/failed/canceled within the last 7 days.
-     * Operations returned are ordered by
+     * prefixed by the backup's name. The operation's
+     * [metadata][google.longrunning.Operation.metadata] field type
+     * `metadata.type_url` describes the type of the metadata. Operations returned
+     * include those that are pending or have completed/failed/canceled within the
+     * last 7 days. Operations returned are ordered by
      * `operation.metadata.value.progress.start_time` in descending order starting
      * from the most recently started operation.
      * </pre>
